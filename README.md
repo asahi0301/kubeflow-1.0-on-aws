@@ -117,3 +117,23 @@ eksctl delete cluster kubeflow
 ekscltのdeleteが失敗した場合は、CloudFormationのStackを手動で消します。
 IAM roleにポリシーを手動で足したり、セキュリティグループの変更を行った場合は
 それすら失敗する可能性があるので、手動でもとに戻したり消したりする必要があるかもしれません。
+消し忘れがあると料金がかかってしまうので、念の為、AWSの管理コンソールで削除確認をしたほうがいいかもしれません
+
+# トラブルシューティング
+## ingress に ELB の DNS名が表示されない
+具体的にには以下のように、ADDRESS の部分が表示されない状態です。
+AWSのコンソールを見ると、ALB自体は作成されているにも関わらず、Target Groupが作成されていない状態でした。
+```sh
+kubectl get ingress -n istio-system
+NAME            HOSTS   ADDRESS   PORTS   AGE
+istio-ingress   *                  80      
+```
+### 対処方法
+ALBに関わる部分のyamlを delete/applyします。
+```sh
+cd ${KF_DIR}/kustomize/istio-ingress 
+kubectl kustomize . | kubectl delete -f -
+kubectl kustomize . | kubectl apply -f -
+```
+これで、ALBのDNS名が表示されるようになります
+
